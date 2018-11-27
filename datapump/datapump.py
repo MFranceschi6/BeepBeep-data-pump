@@ -7,19 +7,20 @@ BACKEND = BROKER = 'redis://' + os.environ[
     'REDIS'] + ":6379" if 'REDIS' in os.environ else "redis://127.0.0.1:6379"
 celery = Celery(__name__, backend=BACKEND, broker=BROKER)
 
-DATASERVICE = "http://"+os.environ['DATASERVICE']+':5002' if 'DATASERVICE' in os.environ else "http://127.0.0.1:5002"
+DATA_SERVICE = "http://"+os.environ['DATA_SERVICE']+':5002' if 'DATA_SERVICE' in os.environ else "http://127.0.0.1:5002"
 
 
 celery.conf.timezone = 'Europe/Rome'
 celery.conf.beat_schedule = {
     'get-runs-every-five-minutes': {
         'task': 'datapump.datapump.periodic_fetch',
-        'schedule': 300.0 # crontab(hour = 0, minute = 0)
+        'schedule': 300.0
     }
 }
 
+
 def fetch_all_runs():
-    users = requests.get(DATASERVICE + '/users').json()['users']
+    users = requests.get(DATA_SERVICE + '/users').json()['users']
     runs_fetched = {}
 
     for user in users:
@@ -61,6 +62,13 @@ def fetch_runs(user):
             continue
         runs.append(activity2run(activity))
     return runs
+
+
+@celery.task()
+def fetch_runs_for_user(user_id):
+    user = requests.get(DATA_SERVICE + '/users/' + user_id).json()
+    runs = fetch_runs(user)
+    push_to_dataservice({user_id : runs})
 
 
 @celery.task()
