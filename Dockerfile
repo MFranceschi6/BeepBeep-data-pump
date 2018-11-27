@@ -4,4 +4,4 @@ ADD requirements.txt ./app/
 WORKDIR /app
 RUN pip install -r requirements.txt
 ADD . /app
-CMD ["celery","-A", "datapump.datapump", "worker", "-q", "fetch", "-B", "-l", "info", "-s", "./schedule-db"]
+CMD ["celery","-A", "datapump.datapump", "worker", "-Q", "fetch", "-B", "-l", "info", "-s", "./schedule-db"]
