@@ -1,16 +1,22 @@
 from stravalib import Client
 import requests
 import os
-from datetime import timedelta
 from celery import Celery
-from celery.task import periodic_task
 
-
-BACKEND = BROKER = 'redis://localhost:6379'
+BACKEND = BROKER = 'redis://' + os.environ[
+    'REDIS'] + ":6379" if 'REDIS' in os.environ else "redis://127.0.0.1:6379"
 celery = Celery(__name__, backend=BACKEND, broker=BROKER)
 
 DATASERVICE = "http://"+os.environ['DATASERVICE']+':5002' if 'DATASERVICE' in os.environ else "http://127.0.0.1:5002"
 
+
+celery.conf.timezone = 'Europe/Rome'
+celery.conf.beat_schedule = {
+    'get-runs-every-five-minutes': {
+        'task': 'datapump.datapump.periodic_fetch',
+        'schedule': 300.0 # crontab(hour = 0, minute = 0)
+    }
+}
 
 def fetch_all_runs():
     users = requests.get(DATASERVICE + '/users').json()['users']
@@ -57,7 +63,7 @@ def fetch_runs(user):
     return runs
 
 
-@periodic_task(run_every=timedelta(seconds=300))
+@celery.task()
 def periodic_fetch():
     push_to_dataservice(fetch_all_runs())
 
