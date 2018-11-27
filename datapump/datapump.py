@@ -9,7 +9,7 @@ from celery.task import periodic_task
 BACKEND = BROKER = 'redis://localhost:6379'
 celery = Celery(__name__, backend=BACKEND, broker=BROKER)
 
-DATASERVICE=os.environ['DATA_SERVICE']
+DATASERVICE = "http://"+os.environ['DATASERVICE']+':5002' if 'DATASERVICE' in os.environ else "http://127.0.0.1:5002"
 
 
 def fetch_all_runs():
@@ -17,6 +17,7 @@ def fetch_all_runs():
     runs_fetched = {}
 
     for user in users:
+        print(user)
         strava_token = user.get('strava_token')
         email = user['email']
 
@@ -30,23 +31,19 @@ def fetch_all_runs():
 
 
 def push_to_dataservice(runs):
+    print(runs)
     requests.post(DATASERVICE + '/add_runs', json=runs)
 
 
 def activity2run(activity):
     """Used by fetch_runs to convert a strava entry.
     """
-    run = {}
-    run['strava_id'] = activity.id
-    run['name'] = activity.name
-    run['distance'] = activity.distance.num
-    run['elapsed_time'] = activity.elapsed_time.total_seconds()
-    run['average_speed'] = activity.average_speed.num
-    run['average_heartrate'] = activity.average_heartrate
-    run['total_elevation_gain'] = activity.total_elevation_gain.num
-    run['start_date'] = activity.start_date.timestamp()
-    run['title'] = activity.name
-    run['description'] = activity.description
+    run = {'strava_id': activity.id, 'name': activity.name, 'distance': activity.distance.num,
+           'elapsed_time': activity.elapsed_time.total_seconds(), 'average_speed': activity.average_speed.num,
+           'average_heartrate': activity.average_heartrate, 'total_elevation_gain': activity.total_elevation_gain.num,
+           'start_date': activity.start_date.timestamp(), 'title': activity.name}
+    if activity.description is not None:
+        run['description'] = activity.description
     return run
 
 
@@ -58,6 +55,7 @@ def fetch_runs(user):
             continue
         runs.append(activity2run(activity))
     return runs
+
 
 @periodic_task(run_every=timedelta(seconds=300))
 def periodic_fetch():
