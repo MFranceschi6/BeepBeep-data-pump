@@ -75,6 +75,7 @@ def fetch_runs_for_user(user_id):
 
 @celery.task()
 def periodic_fetch():
+    print("doing my job")
     push_to_dataservice(fetch_all_runs())
 
 
