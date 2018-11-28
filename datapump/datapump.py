@@ -14,7 +14,7 @@ celery.conf.timezone = 'Europe/Rome'
 celery.conf.beat_schedule = {
     'get-runs-every-five-minutes': {
         'task': 'datapump.datapump.periodic_fetch',
-        'schedule': 30.0
+        'schedule': 300.0
     }
 }
 
