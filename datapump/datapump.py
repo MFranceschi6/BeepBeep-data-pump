@@ -1,4 +1,4 @@
-from stravalib import Client
+from stravalib import client as c
 import requests
 import os
 from celery import Celery
@@ -40,7 +40,6 @@ def fetch_all_runs():
 
 
 def push_to_dataservice(runs):
-    print(runs)
     requests.post(DATA_SERVICE + '/add_runs', json=runs)
 
 
@@ -57,7 +56,7 @@ def activity2run(activity):
 
 
 def fetch_runs(user):
-    client = Client(access_token=user['strava_token'])
+    client = c.Client(access_token=user['strava_token'])
     runs = []
     for activity in client.get_activities(limit=10):
         if activity.type != 'Run':
@@ -67,17 +66,18 @@ def fetch_runs(user):
 
 
 @celery.task()
-def fetch_runs_for_user(user_id):
-    user = requests.get(DATA_SERVICE + '/users/' + user_id).json()
+def fetch_runs_for_user(user_id):  # pragma: no cover
+    user_id = str(user_id)
+    user = requests.get(DATA_SERVICE + '/users/' + user_id+"?secure=true").json()
     runs = fetch_runs(user)
     push_to_dataservice({user_id : runs})
 
 
 @celery.task()
-def periodic_fetch():
+def periodic_fetch():  # pragma: no cover
     print("doing my job")
     push_to_dataservice(fetch_all_runs())
 
 
-if __name__ == '__main__':
+if __name__ == '__main__':  # pragma: no cover
     periodic_fetch()
