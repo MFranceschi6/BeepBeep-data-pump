@@ -48,10 +48,12 @@ def activity2run(activity):
     """
     run = {'strava_id': activity.id, 'name': activity.name, 'distance': activity.distance.num,
            'elapsed_time': activity.elapsed_time.total_seconds(), 'average_speed': activity.average_speed.num,
-           'average_heartrate': activity.average_heartrate, 'total_elevation_gain': activity.total_elevation_gain.num,
+           'total_elevation_gain': activity.total_elevation_gain.num,
            'start_date': activity.start_date.timestamp(), 'title': activity.name}
     if activity.description is not None:
         run['description'] = activity.description
+    if activity.average_heartrate is not None:
+        run['average_heartrate'] = activity.average_heartrate
     return run
 
 
